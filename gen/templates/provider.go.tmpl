@@ -1,0 +1,60 @@
+package {{.Package}}
+
+import (
+	"fmt"
+
+	"github.com/blang/semver"
+	"github.com/pulumi/pulumi/sdk/v2/go/common/resource/plugin"
+	"github.com/pulumi/pulumi/sdk/v2/go/common/tokens"
+	"github.com/pulumi/pulumi/sdk/v2/go/common/workspace"
+
+	{{range .ProviderImports}}
+	{{.Name}} "{{.Path}}"
+	{{end}}
+)
+
+type provider struct {
+	pkg string
+	version semver.Version
+	schema  []byte
+
+	provider *{{.ProviderType}}
+}
+
+func NewProvider(p *{{.ProviderType}}) plugin.Provider {
+	return &provider{
+		pkg: "{{.Package}}",
+		version: semver.MustParse("{{.Version}}"),
+		schema: pulumiSchema,
+		provider: p,
+	}
+}
+
+func (p *provider) Close() error {
+	// TODO(pdg): implement
+	return nil
+}
+
+func (p *provider) Pkg() tokens.Package {
+	return tokens.Package(p.pkg)
+}
+
+func (p *provider) GetSchema(version int) ([]byte, error) {
+	if version > 1 {
+		return nil, fmt.Errorf("unsupported schema version %v", version)
+	}
+	return p.schema, nil
+}
+
+func (p *provider) GetPluginInfo() (workspace.PluginInfo, error) {
+	return workspace.PluginInfo{
+		Name: p.pkg,
+		Kind: workspace.ResourcePlugin,
+		Version: &p.version,
+	}, nil
+}
+
+func (p *provider) SignalCancellation() error {
+	// TODO(pdg): implement
+	return nil
+}
